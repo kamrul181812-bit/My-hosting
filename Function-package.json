@@ -1,0 +1,11 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Serverless Functions",
+  "main": "deploy.js",
+  "dependencies": {
+    "@octokit/rest": "^19.0.11",
+    "axios": "^1.5.0",
+    "firebase-admin": "^11.11.0"
+  }
+}
