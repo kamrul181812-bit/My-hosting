@@ -1,0 +1,42 @@
+[build]
+  publish = "public"
+  command = "echo 'No build needed'"
+
+[build.environment]
+  NODE_VERSION = "18"
+  PYTHON_VERSION = "3.9"
+
+[[plugins]]
+  package = "@netlify/plugin-python"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  framework = "#static"
+  targetPort = 8888
+  autoLaunch = false
+
+[context.production.environment]
+  FIREBASE_PROJECT_ID = "my-hosting-d5bdf"
+  FIREBASE_CLIENT_EMAIL = "firebase-adminsdk-fbsvc@my-hosting-d5bdf.iam.gserviceaccount.com"
+  FIREBASE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQClY/E++VxL0JnI\nSFzlWSanuIU/9nhWlGHZkzoTZBdLNWVO+PsOarqMxboqI6oDaWR120b9ibz5b51W\nsGCMyisTIMo+KTNLFmH/3qPKXhtLhaBIjc3ltc4YqM5gHaHC93vwUnLF72ZT84yb\n981cUi8IKPcrq3+tJ1sDjSo8eyGKeapm8AxKRVLpVQLVMnh2zBRKWTceWk/YJBK8\nhLw14gvNnYVJAONZn0dK0smWWorZ0KP7l+ovgUHnSKXojqJ+surdpym2yUmqUs9h\nGo5xSDz84d44sijIGFPBxoSn267IkLRJ3DghVfOUpRI+tPBAoL/iPmPZaH6GlfQc\nOLYgiuhVAgMBAAECggEAIzjelr+6RTcemQW4KuvKjKuCTTXrON0O3aw6EQke4Nh1\nQ9VIejCGnBY76F+CBIn8aBET1EjyItj/VAfp9/HSLJeuGoDhuJsCseAzV5SlEXda\nxDjW4ZXPV3cTxGprGb9k+LBGWxr52uUiS9EBPikOdRlsUjOK1FBuVJpKpWi/ouKg\nKPyht63xTsH3op4C/IujM6X6lh467nTXTZGV+RXaIMc50SO/M1+UdJFr/iMciQJ7\nMpFqQ7MMHh4fSv8PADQ8FhYltmbunV/POoJ5MT+zgJNG4C6lNnGSxrFuxu+iLcoJ\nVJPd1RvqLgY5wn21BwcXg1SZ+tL/ym6xbFLZsyAN3QKBgQDkFK1jxRF411kr54GJ\nwkVLKHiXuY8A/ael0VLVWlDZnL/CvlOGYIydnH/eLra6u9mnBkv2wRogtFSyXKJf\ncX1a7F7al+RDlQHJTVODrm+GGkL/Bkhreaxy00aaYm7wMKNPolrKivPa3ihD2P++\nkfxPOwVzdw7wBzL8qektMrAMCwKBgQC5or/GW2zzbKlr6QU4r9HKfAHH33NpeTjp\nrID7lxl5PIZ6P71VNkjLGPLQtPfTV9C5CWNp2G66BaAVfttecyZoCuucrdvtAQpu\ntnoaQ+c1jOTWqNHcLKOnHNPuckgrGOeYS1VKIfiIYV97M/ShNOwcYdBiNQbqFwLu\nJZSzy4E5HwKBgGJNHyX/C7a/aeloUAZluqPX/5G1IhNVP+pRu5fE40/HJUbz7N/f\nwPs1Nk82Zv84c2hvaFIji/VIg7CUCE+GhHappYAlMvaFxE1UjIgWqG5t5y4vMQtR\nV6fts2JaxmGzNM/fs63UEaHlWglT/3XNSaeEUqcfS0rcb3dCbANU81ddAoGBAIvw\nQBlLumoWs/EBDEqbX88AhGcj72DHXTvqKqF+WlmmYsmtWxDthxpziDgE8/2B6XpT\ntXmJCo94xiDuLHia3Yz5DnxiI7QaYL7tGEbMgXNA7xFS2kDb9dJ4TNsnk3fJomyP\n/Y+Q5EYLAWti0zrjJkqPAgPGbZvyFOdptRuEgbmJAoGAH+arqlGfWpUQdnGWgfJ9\nTM8UNSSLGP99YLgNwhpEFaRuLnxmROaMbr32jCF3O0URaCJP14EzDASJU6YWMFSi\nF+vPa6IqbSbwtQ1sA7bu9fH1dXxjKqQfEUc0qe47OUDpbif3JBP+y+NtlGYHRE4g\nhkncihIXCRSBPHyisOpPGOc=\n-----END PRIVATE KEY-----\n"
+  GITHUB_TOKEN = "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"
+  NETLIFY_TOKEN = "nfp_a9mW6aEd6s1XDvUsnSbnL1GnJ9wZzXRn9648"
+
+[headers]
+  for = "/*"
+    [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.tailwindcss.com;
+      style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+      font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com;
+      connect-src 'self' https://firebase.googleapis.com wss://*.firebaseio.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://api.netlify.com;
+      img-src 'self' data: https:;
+      frame-src 'self' https://*.firebaseapp.com;
+    """
