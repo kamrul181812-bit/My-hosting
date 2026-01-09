@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Bot Hosting - Netlify</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom Styles */
+        .console-log { font-family: 'Courier New', monospace; font-size: 0.9rem; white-space: pre-wrap; word-break: break-all; }
+        .log-info { color: #10b981; }
+        .log-warning { color: #f59e0b; }
+        .log-error { color: #ef4444; }
+        .log-success { color: #3b82f6; }
+        
+        .file-upload-area { border: 2px dashed #6b7280; border-radius: 0.5rem; transition: all 0.3s; }
+        .file-upload-area.drag-over { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.05); }
+        
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .status-running { background-color: #10b981; }
+        .status-stopped { background-color: #6b7280; }
+        .status-error { background-color: #ef4444; }
+        .status-deploying { background-color: #f59e0b; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .scrollbar-custom::-webkit-scrollbar { width: 8px; }
+        .scrollbar-custom::-webkit-scrollbar-track { background: #1f2937; }
+        .scrollbar-custom::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Auth Forms -->
+        <div id="auth-container">
+            <!-- Login Form -->
+            <div id="login-form" class="max-w-md mx-auto bg-gray-800 rounded-xl shadow-2xl p-8">
+                <div class="text-center mb-8">
+                    <i class="fas fa-robot text-5xl text-blue-500 mb-4"></i>
+                    <h1 class="text-3xl font-bold">Python Bot Hosting</h1>
+                    <p class="text-gray-400 mt-2">Deploy your Python bots in one click</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="login-email" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="you@example.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="login-password" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                    
+                    <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login
+                    </button>
+                    
+                    <div class="text-center">
+                        <p class="text-gray-400">Don't have an account? 
+                            <button onclick="showSignup()" class="text-blue-400 hover:text-blue-300 font-medium">Sign up here</button>
+                        </p>
+                    </div>
+                    
+                    <div id="login-error" class="text-red-400 text-sm mt-2 text-center hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Signup Form -->
+            <div id="signup-form" class="max-w-md mx-auto bg-gray-800 rounded-xl shadow-2xl p-8 hidden">
+                <div class="text-center mb-8">
+                    <i class="fas fa-user-plus text-5xl text-green-500 mb-4"></i>
+                    <h1 class="text-3xl font-bold">Create Account</h1>
+                    <p class="text-gray-400 mt-2">Start hosting your bots</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="signup-email" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="you@example.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="signup-password" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Confirm Password</label>
+                        <input type="password" id="signup-confirm" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="••••••••">
+                    </div>
+                    
+                    <button onclick="handleSignup()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-user-plus mr-2"></i> Create Account
+                    </button>
+                    
+                    <div class="text-center">
+                        <p class="text-gray-400">Already have an account? 
+                            <button onclick="showLogin()" class="text-blue-400 hover:text-blue-300 font-medium">Login here</button>
+                        </p>
+                    </div>
+                    
+                    <div id="signup-error" class="text-red-400 text-sm mt-2 text-center hidden"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold flex items-center">
+                        <i class="fas fa-robot text-blue-500 mr-3"></i>
+                        Bot Dashboard
+                    </h1>
+                    <p id="user-email" class="text-gray-400 mt-1">Welcome!</p>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div id="status-container" class="flex items-center px-4 py-2 bg-gray-800 rounded-lg">
+                        <span class="status-dot status-stopped"></span>
+                        <span id="status-text" class="font-medium">Stopped</span>
+                    </div>
+                    
+                    <button onclick="handleLogout()" class="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition duration-200">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left Column -->
+                <div class="lg:col-span-2">
+                    <!-- File Upload -->
+                    <div class="bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center">
+                            <i class="fas fa-file-upload text-blue-400 mr-2"></i>
+                            Upload Bot Files
+                        </h2>
+                        
+                        <div id="file-upload-area" class="file-upload-area p-8 text-center cursor-pointer mb-6">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-300 mb-2">Drag & drop your files here or click to upload</p>
+                            <p class="text-gray-400 text-sm">Upload <code class="bg-gray-700 px-2 py-1 rounded">bot.py</code> and <code class="bg-gray-700 px-2 py-1 rounded">requirements.txt</code></p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="relative">
+                                <input type="file" id="bot-file" accept=".py" class="hidden">
+                                <label for="bot-file" class="block p-4 bg-gray-700 hover:bg-gray-600 rounded-lg cursor-pointer transition duration-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file-code text-blue-400 text-xl mr-3"></i>
+                                            <span class="font-medium">bot.py</span>
+                                        </div>
+                                        <span id="bot-file-status" class="text-gray-400">Not uploaded</span>
+                                    </div>
+                                    <div id="bot-file-info" class="text-sm text-gray-400 mt-2 hidden"></div>
+                                </label>
+                            </div>
+                            
+                            <div class="relative">
+                                <input type="file" id="req-file" accept=".txt" class="hidden">
+                                <label for="req-file" class="block p-4 bg-gray-700 hover:bg-gray-600 rounded-lg cursor-pointer transition duration-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file-alt text-green-400 text-xl mr-3"></i>
+                                            <span class="font-medium">requirements.txt</span>
+                                        </div>
+                                        <span id="req-file-status" class="text-gray-400">Not uploaded</span>
+                                    </div>
+                                    <div id="req-file-info" class="text-sm text-gray-400 mt-2 hidden"></div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h3 class="font-medium mb-2">Uploaded Files</h3>
+                            <div id="file-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Console -->
+                    <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold flex items-center">
+                                <i class="fas fa-terminal text-green-400 mr-2"></i>
+                                Live Console
+                            </h2>
+                            <div class="flex space-x-2">
+                                <button onclick="clearConsole()" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm transition duration-200">
+                                    <i class="fas fa-trash mr-1"></i> Clear
+                                </button>
+                                <button onclick="refreshLogs()" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm transition duration-200">
+                                    <i class="fas fa-sync-alt mr-1"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="console" class="bg-black rounded-lg p-4 h-80 overflow-y-auto scrollbar-custom">
+                            <div class="console-log log-info">[System] Welcome to Python Bot Hosting Platform</div>
+                            <div class="console-log log-info">[System] Upload your bot.py and requirements.txt to get started</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div>
+                    <!-- Bot Controls -->
+                    <div class="bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center">
+                            <i class="fas fa-play-circle text-green-400 mr-2"></i>
+                            Bot Controls
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <button id="deploy-btn" onclick="deployToNetlify()" class="w-full flex items-center justify-center py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg font-semibold transition duration-200">
+                                <i class="fas fa-rocket mr-2"></i>
+                                <span>Deploy to Netlify</span>
+                                <span id="deploy-spinner" class="ml-2 hidden">
+                                    <div class="loading-spinner"></div>
+                                </span>
+                            </button>
+                            
+                            <button id="start-btn" onclick="startBot()" disabled class="w-full flex items-center justify-center py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition duration-200">
+                                <i class="fas fa-play mr-2"></i>
+                                Start Bot
+                            </button>
+                            
+                            <button id="stop-btn" onclick="stopBot()" disabled class="w-full flex items-center justify-center py-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition duration-200">
+                                <i class="fas fa-stop mr-2"></i>
+                                Stop Bot
+                            </button>
+                            
+                            <button onclick="updateFiles()" class="w-full flex items-center justify-center py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold transition duration-200">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Update Files
+                            </button>
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-700">
+                            <h3 class="font-medium mb-3">Deployment Info</h3>
+                            <div id="url-display" class="hidden mb-3">
+                                <a id="bot-url" href="#" target="_blank" class="flex items-center p-3 bg-gray-700 hover:bg-gray-600 rounded transition duration-200">
+                                    <i class="fas fa-external-link-alt text-blue-400 mr-3"></i>
+                                    <div class="truncate">
+                                        <div class="text-sm text-gray-400">Your Bot URL</div>
+                                        <div id="bot-url-text" class="truncate"></div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div id="no-url-message" class="p-3 bg-gray-700 rounded">
+                                <div class="flex items-center">
+                                    <i class="fas fa-info-circle text-yellow-400 mr-3"></i>
+                                    <div>
+                                        <div class="text-sm">Deploy to get your bot URL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bot Info -->
+                    <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4 flex items-center">
+                            <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                            Bot Information
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <div class="p-3 bg-gray-700 rounded">
+                                <div class="text-sm text-gray-400">Balance</div>
+                                <div class="text-xl font-bold">$<span id="balance">100.00</span></div>
+                            </div>
+                            
+                            <div class="p-3 bg-gray-700 rounded">
+                                <div class="text-sm text-gray-400">Last Deployed</div>
+                                <div id="last-deployed">Never</div>
+                            </div>
+                            
+                            <div class="p-3 bg-gray-700 rounded">
+                                <div class="text-sm text-gray-400">Status</div>
+                                <div class="flex items-center">
+                                    <span class="status-dot status-stopped mr-2"></span>
+                                    <span id="status-display">Stopped</span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-gray-700 rounded">
+                                <div class="text-sm text-gray-400">Uptime</div>
+                                <div id="uptime">0 minutes</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-700">
+                            <h4 class="font-medium mb-2">How to Use:</h4>
+                            <ol class="text-sm text-gray-300 space-y-1 list-decimal pl-4">
+                                <li>Upload <code class="bg-gray-900 px-1 rounded">bot.py</code></li>
+                                <li>Upload <code class="bg-gray-900 px-1 rounded">requirements.txt</code></li>
+                                <li>Click "Deploy to Netlify"</li>
+                                <li>Wait for deployment (1-2 mins)</li>
+                                <li>Use Start/Stop controls</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="app.js"></script>
+    <script src="control.js"></script>
+    
+    <script>
+        // Global navigation
+        function showLogin() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+        }
+        
+        function showSignup() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('signup-form').classList.remove('hidden');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', showLogin);
+    </script>
+</body>
+</html>
